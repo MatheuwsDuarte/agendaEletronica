@@ -1,86 +1,113 @@
-// index.js — Script de teste da Sprint 1
+// index.js — Script de teste da Sprint 2
 // Executar com: node index.js
-// Simula os 4 cenários: conexão, erro de validação, inserção válida e listagem.
+// Usuário → Categorias → Erro de validação → Evento vinculado
 
 import Database from './src/config/Database.js';
 import Evento from './src/entities/Evento.js';
 import Logger from './src/utils/Logger.js';
+import Categoria from './src/entities/Categoria.js';
+import Usuario from './src/entities/Usuario.js';
+
 
 async function executar() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('   AGENDA DAL — Sprint 1: Teste de Fundação');
+  console.log('   AGENDA ELETRONICA — Sprint2: Domínio Completo');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  // CENÁRIO 1: Conexão ao banco ───────────────────────────────
-  console.log('[ 1/4 ] Conectando ao MongoDB...');
-  await Database.obterConexao(); // O Singleton cria a conexão aqui
+ await Database.obterConexao();
 
-  // CENÁRIO 2: Forçar erro de validação ───────────────────────
-  console.log('\n[ 2/4 ] Tentando salvar evento INVÁLIDO (sem título)...');
+  // ── BLOCO A: Usuário ──────────────────────────────────────────
+  console.log('[ A ] Salvando usuário Matheus...');
+  let idUsuario;
   try {
-    const eventoInvalido = new Evento({
-      titulo: '',       // Campo obrigatório vazio — deve falhar na validação
-      data: new Date(),
-      tipo: 'WEG',
+    const matheus = new Usuario({
+      nome: 'Matheus',
+      email: 'matheus@utfpr.edu.br',
     });
-    await eventoInvalido.salvar(); // Espera-se que lance TypeError aqui
+    idUsuario = await matheus.salvar();
 
   } catch (erro) {
-    // O Logger já foi chamado internamente pelo método #validar via salvar(),
-    // O chamador também pode decidir logar contexto adicional.
+    // Se o usuário já existe de uma execução anterior, apenas recuperamos
+    if (erro.message.includes('Conflito')) {
+      console.warn(`[index.js] ℹ️  ${erro.message} Buscando por email...`);
+      const existente = await Usuario.buscarPorEmail('matheus@utfpr.edu.br');
+      idUsuario = existente._id.toString();
+    } else {
+      Logger.registrar(erro, 'index.js — Bloco A');
+      throw erro;
+    }
+  }
+
+  // ── BLOCO B: Categorias válidas ───────────────────────────────
+  console.log('\n[ B ] Salvando categorias "Estágio WEG" e "Faculdade"...');
+  let idCategoriaWeg;
+  try {
+    const categoriaWeg = new Categoria({ nome: 'Estágio WEG', cor: '#0057A8' });
+    idCategoriaWeg = await categoriaWeg.salvar();
+
+    const categoriaFaculdade = new Categoria({ nome: 'Faculdade', cor: '#FFD700' });
+    await categoriaFaculdade.salvar();
+
+  } catch (erro) {
+    console.error(`[index.js] ❌ Erro ao salvar categoria: ${erro.message}`);
+    Logger.registrar(erro, 'index.js — Bloco B');
+  }
+
+  // ── BLOCO C: Forçar erro de validação na Categoria ────────────
+  console.log('\n[ C ] Tentando salvar categoria INVÁLIDA (cor fora do padrão hex)...');
+  try {
+    const categoriaInvalida = new Categoria({
+      nome: 'Categoria Quebrada',
+      cor: 'azul',           // Inválido: deve ser hex como "#0000FF"
+    });
+    await categoriaInvalida.salvar();
+
+  } catch (erro) {
     console.error(`[index.js] ❌ Erro capturado como esperado: ${erro.message}`);
-    // Loga o erro explicitamente a partir do script de entrada (contexto externo)
-    Logger.registrar(erro, 'index.js — Cenário 2: Evento inválido');
+    Logger.registrar(erro, 'index.js — Bloco C: Categoria inválida');
     console.log('[index.js] 📝 Erro registrado em logs/erros.log');
   }
 
-  // CENÁRIO 3: Inserção de evento válido
-  console.log('\n[ 3/4 ] Salvando evento VÁLIDO: "Onboarding WEG"...');
-  let idInserido;
+  // ── BLOCO D: Evento vinculado à categoria WEG ─────────────────
+  console.log('\n[ D ] Salvando evento vinculado à categoria "Estágio WEG"...');
   try {
-    const onboardingWeg = new Evento({
-      titulo: 'Onboarding WEG',
+    const reuniaoOnboarding = new Evento({
+      titulo: 'Primeiro dia de empresa — Time de Logistica',
       data: new Date('2026-05-04T07:30:00'),
       tipo: 'WEG',
-      descricao: 'Primeiro dia de estágio. Integração com a equipe de Logistica.',
+      descricao: 'Assinar contrato e visitar fabrica.',
       local: 'WEG — Jaraguá do Sul, SC',
+      id_categoria: idCategoriaWeg ?? null,
+      id_usuario: idUsuario ?? null,
     });
-    idInserido = await onboardingWeg.salvar();
-
-    // Inserindo mais um para popular a listagem
-    const entregaTcc = new Evento({
-      titulo: 'Entrega do TCC 1',
-      data: new Date('2026-06-08T23:59:00'),
-      tipo: 'UTFPR',
-      descricao: 'Envio do TCC 1 para o orientador.',
-      local: 'UTFPR — Câmpus CP',
-    });
-    await entregaTcc.salvar();
+    await reuniaoOnboarding.salvar();
 
   } catch (erro) {
-    console.error(`[index.js] ❌ Erro inesperado ao salvar: ${erro.message}`);
+    console.error(`[index.js] ❌ Erro ao salvar evento: ${erro.message}`);
+    Logger.registrar(erro, 'index.js — Bloco D');
   }
 
-  // CENÁRIO 4: Listagem de todos os eventos 
-  console.log('\n[ 4/4 ] Listando todos os eventos no banco...');
-  try {
-    const todos = await Evento.listarTodos();
-    todos.forEach((ev, i) => {
-      console.log(`  ${i + 1}. [${ev.tipo}] ${ev.titulo} — ${ev.data.toLocaleDateString('pt-BR')}`);
-    });
-  } catch (erro) {
-    console.error(`[index.js] ❌ Erro ao listar: ${erro.message}`);
-  }
+  // ── RESUMO FINAL ──────────────────────────────────────────────
+  console.log('\n[ RESUMO ] Estado atual das coleções:');
 
-  // ENCERRAMENTO 
+  const categorias = await Categoria.listarTodas();
+  console.log('  Categorias:', categorias.map(c => `${c.nome} (${c.cor})`).join(', '));
+
+  const eventos = await Evento.listarTodos();
+  console.log('  Eventos:', eventos.map(e => e.titulo).join(', '));
+
+  const usuario = await Usuario.buscarPorEmail('matheus@utfpr.edu.br');
+  console.log(`  Usuário ativo: ${usuario?.nome} — fuso: ${usuario?.fuso_horario}`);
+
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   await Database.fecharConexao();
-  console.log('Execução concluída. Verifique logs/erros.log para os registros de erro.\n');
+  console.log('Sprint 2 concluída. Banco com 3 coleções ativas.\n');
 }
 
-// Ponto de entrada — captura erros não tratados no topo do call stack
 executar().catch((erro) => {
   Logger.registrar(erro, 'index.js — erro fatal não tratado');
   console.error('[FATAL]', erro.message);
   process.exit(1);
+
+
 });
