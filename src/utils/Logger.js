@@ -11,6 +11,8 @@ const __dirname = path.dirname(__filename);
 // Caminho absoluto para o arquivo de log, criado na pasta /logs na raiz do projeto
 const LOG_PATH = path.resolve(__dirname, '../../logs/erros.log');
 
+fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+
 class Logger {
   /**
    * Grava uma entrada de erro no arquivo físico erros.log.
