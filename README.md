@@ -53,6 +53,7 @@ agenda-dal/
 ├── package.json
 └── README.md
 
+```
 ## 🛠️ Como Executar e Testar a API
 
 ### Pré-requisitos
@@ -68,4 +69,5 @@ npm install
 # Iniciar o servidor na porta 3000
 npm start
 
+```
 Desenvolvido por Matheus Duarte para a disciplina de Programação Web Back-End.
