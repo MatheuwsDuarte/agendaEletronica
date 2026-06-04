@@ -1,49 +1,54 @@
-# 📅 Agenda Eletrônica Pessoal
+# 📅 Agenda Eletrônica Pessoal (API Web & DAL)
 
-Este projeto consiste no desenvolvimento de uma **Camada de Acesso a Dados (Data Access Layer - DAL)** para uma Agenda Eletrônica Pessoal. 
+Este projeto consiste no desenvolvimento de uma **Aplicação Web (API)** para uma Agenda Eletrônica Pessoal, construída sobre uma robusta **Camada de Acesso a Dados (DAL)**. 
 
-Foi desenvolvido como **Projeto 1** para a disciplina de Programação Web Back-End do curso de Engenharia de Computação (UTFPR).
+Foi desenvolvido integrando os requisitos dos **Projetos 1 e 2** para a disciplina de Programação Web Back-End do curso de Engenharia de Computação (UTFPR).
 
-> ⚠️ **Atenção:** Este projeto **NÃO** é uma API Web RESTful. Seguindo rigorosamente as restrições da disciplina, a arquitetura consiste exclusivamente em uma biblioteca de classes (Node.js Vanilla) que se conecta diretamente ao banco de dados, sem o uso de frameworks de servidor (como Express ou NestJS) ou ODMs (como Mongoose).
+> 🚀 **Evolução do Projeto (Fase 2):** Inicialmente concebido apenas como uma biblioteca de classes pura, o sistema foi evoluído para uma API utilizando **Express.js**. Foram implementadas rotas HTTP que consomem a DAL, com controle de acesso rigoroso utilizando **Sessões** (`express-session`). O retorno dos dados é feito inteiramente no formato **JSON**.
 
 ## 🎯 Domínio e Temática
-A modelagem do banco reflete um cenário de uso real para gestão de rotina, contemplando compromissos corporativos, acadêmicos, de saúde e pessoais. 
+A modelagem reflete um cenário de uso real para gestão de rotina, contemplando compromissos corporativos, acadêmicos, de saúde e pessoais. 
 
-Para isso, foram criadas **3 coleções** principais no banco de dados:
-1. `Usuario`: Representa o dono da agenda.
-2. `Categoria`: Etiquetas organizacionais (ex: Faculdade, Trabalho, Esportes).
-3. `Evento`: Os compromissos em si, vinculados a um usuário e a uma categoria.
+As **3 coleções** principais no banco de dados são:
+1. `Usuario`: Representa o dono da agenda (utilizado na validação de login).
+2. `Categoria`: Etiquetas organizacionais (ex: Faculdade, Trabalho).
+3. `Evento`: Os compromissos em si, vinculados a um usuário.
 
 ## 🚀 Tecnologias Utilizadas
 * **Linguagem:** Node.js (ES Modules)
-* **Banco de Dados:** MongoDB
-* **Driver:** `mongodb` (Driver nativo, puro)
-* **Manipulação de Arquivos:** Módulo nativo `fs` (File System)
+* **Framework Web:** Express.js
+* **Autenticação:** `express-session` (Sessões server-side com cookies HTTP-Only)
+* **Banco de Dados:** MongoDB (Driver nativo `mongodb`, sem ODMs)
+* **Manipulação de Arquivos:** Módulo nativo `fs` (File System) para logs.
 
-## ✅ Critérios de Avaliação Atendidos
+## ✅ Critérios de Avaliação Atendidos (Projeto 1 e 2)
 
-Este repositório cumpre estritamente todas as regras do edital da disciplina:
-
-* **[x] Orientação a Objetos:** As coleções do banco foram mapeadas rigorosamente como classes em JavaScript (ex: `Evento.js`, `Categoria.js`).
-* **[x] Métodos CRUD Embutidos:** As classes possuem os métodos de Inserção, Busca e Deleção, executando as consultas NoSQL no SGBD.
-* **[x] Verificação de Campos Obrigatórios:** Todos os métodos de persistência validam rigorosamente a existência e formatação dos dados (ex: verificar se a cor da categoria está em formato HEX válido) antes de interagir com o banco.
-* **[x] Tratamento de Exceções:** Toda interação com o banco de dados está devidamente encapsulada em blocos `try/catch`.
-* **[x] Log Físico de Erros:** Erros de validação ou de banco de dados capturados nos blocos `catch` são registrados com timestamp e *stack trace* em um arquivo físico (`logs/erros.log`) usando a classe utilitária `Logger`.
+* **[x] Integração Web-DAL:** As rotas do Express (Controllers) não acessam o banco diretamente; elas instanciam as classes da DAL (Orientação a Objetos) para persistência.
+* **[x] Roteamento e Parâmetros (GET/POST):** Implementação de rotas limpas recebendo dados via `req.body`.
+* **[x] Autenticação e Sessões:** Uso de Middlewares para bloquear rotas privadas (`/eventos`). Somente requisições com a sessão ativa (`/login`) possuem acesso.
+* **[x] Verificação de Campos e Status Semânticos:** Dados obrigatórios são validados nas rotas. Caso falhem, a API retorna HTTP 400 (Bad Request) com mensagens claras em JSON.
+* **[x] Tratamento de Exceções e Log Físico:** Blocos `try/catch` blindam as operações. Falhas internas (HTTP 500) disparam o utilitário `Logger`, que grava a stack do erro no arquivo físico `logs/erros.log`.
 
 ## 📁 Estrutura do Projeto
+
 ```text
 agenda-dal/
 ├── src/
 │   ├── config/
 │   │   └── Database.js       # Conexão Singleton com MongoDB
-│   ├── entities/
-│   │   ├── Categoria.js      # Classe da entidade Categoria
-│   │   ├── Evento.js         # Classe da entidade Evento
-│   │   └── Usuario.js        # Classe da entidade Usuario
+│   ├── entities/             # Classes da Camada de Dados (DAL)
+│   │   ├── Categoria.js      
+│   │   ├── Evento.js         
+│   │   └── Usuario.js        
+│   ├── middlewares/
+│   │   └── authMiddleware.js # Guarda de rotas (Verificação de Sessão)
+│   ├── routes/
+│   │   ├── authRoutes.js     # Rotas públicas (/login, /logout)
+│   │   └── eventoRoutes.js   # Rotas privadas protegidas (/eventos)
 │   └── utils/
 │       └── Logger.js         # Utilitário de gravação de logs (fs)
 ├── logs/
-│   └── erros.log             # Arquivo gerado automaticamente em runtime
-├── index.js                  # Ponto de entrada e script de testes
+│   └── erros.log             # Arquivo de rastreio contínuo gerado em runtime
+├── server.js                 # Ponto de entrada (Servidor Express e Sessões)
 ├── package.json
 └── README.md
