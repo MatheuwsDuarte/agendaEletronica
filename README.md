@@ -52,3 +52,20 @@ agenda-dal/
 ├── server.js                 # Ponto de entrada (Servidor Express e Sessões)
 ├── package.json
 └── README.md
+
+## 🛠️ Como Executar e Testar a API
+
+### Pré-requisitos
+* **Node.js** (v18+) e **MongoDB Community Server** rodando localmente (porta `27017`).
+* Cliente REST (Thunder Client no VS Code, Postman ou Insomnia).
+
+### 1. Inicialização
+
+```bash
+# Instalar dependências (Express, express-session, mongodb)
+npm install
+
+# Iniciar o servidor na porta 3000
+npm start
+
+Desenvolvido por Matheus Duarte para a disciplina de Programação Web Back-End.
